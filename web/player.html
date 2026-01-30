@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Signage Player</title>
+  <style>
+    html, body { margin:0; height:100%; background:#000; overflow:hidden; }
+    #wrap { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+    video { width:100%; height:100%; object-fit:cover; background:#000; }
+    #status {
+      position:fixed; left:10px; bottom:10px;
+      font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:#fff; opacity:.7; background:rgba(0,0,0,.35);
+      padding:6px 8px; border-radius:8px; max-width:80vw;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <video id="v" autoplay muted playsinline></video>
+  </div>
+  <div id="status">Loading…</div>
+
+<script>
+(() => {
+  const qs = new URLSearchParams(location.search);
+  const screenId = qs.get("screen") || "milano";
+  const apiBase = qs.get("api") || "http://localhost:3000";
+  const playlistUrl = `${apiBase}/api/playlist/${encodeURIComponent(screenId)}`;
+
+  const video = document.getElementById("v");
+  const statusEl = document.getElementById("status");
+
+  let playlist = [];
+  let idx = 0;
+  let lastFetch = 0;
+
+  const FETCH_EVERY_MS = 5 * 60 * 1000; // reload playlist every 5 minutes
+
+  function setStatus(msg) {
+    statusEl.textContent = `[${screenId}] ${msg}`;
+  }
+
+  async function fetchPlaylist() {
+    try {
+      setStatus("Fetching playlist…");
+      const res = await fetch(playlistUrl, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      playlist = Array.isArray(data.items) ? data.items : [];
+      lastFetch = Date.now();
+
+      if (!playlist.length) {
+        setStatus("Playlist is empty (add videos from the admin dashboard).");
+      } else {
+        setStatus(`Playlist loaded: ${playlist.length} video(s).`);
+      }
+    } catch (e) {
+      setStatus(`Fetch error: ${e.message}`);
+    }
+  }
+
+  function safeNextIndex() {
+    if (!playlist.length) return 0;
+    idx = (idx + 1) % playlist.length;
+    return idx;
+  }
+
+  function playCurrent() {
+    if (!playlist.length) return;
+
+    const item = playlist[idx];
+    setStatus(`Playing ${idx + 1}/${playlist.length}: ${item.title || "Video"}`);
+
+    // Reset video element to avoid stuck states
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+
+    video.src = item.url;
+
+    video.play().catch(() => {
+      // If autoplay restrictions apply, retry shortly (video is already muted)
+      setTimeout(() => video.play().catch(() => {}), 500);
+    });
+  }
+
+  // When the video ends, play the next one
+  video.addEventListener("ended", () => {
+    safeNextIndex();
+    playCurrent();
+  });
+
+  // If playback errors, skip to next item
+  video.addEventListener("error", () => {
+    setStatus("Video error → skipping…");
+    safeNextIndex();
+    setTimeout(playCurrent, 500);
+  });
+
+  // Watchdog: if paused unexpectedly, try to resume
+  setInterval(() => {
+    if (playlist.length && video.paused) {
+      video.play().catch(() => {});
+    }
+  }, 5000);
+
+  // Periodic playlist refresh
+  setInterval(async () => {
+    if (Date.now() - lastFetch > FETCH_EVERY_MS) {
+      const oldLen = playlist.length;
+      await fetchPlaylist();
+
+      // If playlist was empty and now has items, start playback
+      if (playlist.length && oldLen === 0) {
+        idx = 0;
+        playCurrent();
+      }
+
+      // If playlist got shorter, keep index in range
+      if (playlist.length && idx >= playlist.length) idx = 0;
+    }
+  }, 30_000);
+
+  // Initial load
+  (async () => {
+    await fetchPlaylist();
+    if (playlist.length) {
+      idx = 0;
+      playCurrent();
+    }
+  })();
+})();
+</script>
+</body>
+</html>
