@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Signage Admin</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#0f1a2b;
+      --card2:#0c1626;
+      --text:#e7eefc;
+      --muted:#9fb0d0;
+      --line:rgba(255,255,255,.10);
+      --accent:#4f8cff;
+      --accent2:#7c4dff;
+      --good:#2dd4bf;
+      --warn:#fbbf24;
+      --bad:#fb7185;
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background:
+        radial-gradient(1200px 700px at 20% 0%, rgba(79,140,255,.20), transparent 60%),
+        radial-gradient(1000px 600px at 100% 10%, rgba(124,77,255,.14), transparent 55%),
+        var(--bg);
+      color:var(--text);
+    }
+
+    a{ color:inherit; }
+    .wrap{
+      max-width: 1100px;
+      margin: 26px auto;
+      padding: 0 16px 28px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .title{
+      display:flex; flex-direction:column; gap:6px;
+    }
+    h1{
+      margin:0;
+      font-size: 22px;
+      letter-spacing: .2px;
+    }
+    .subtitle{
+      color:var(--muted);
+      font-size: 13px;
+    }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 8px 10px;
+      border:1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .dot{
+      width: 8px; height: 8px; border-radius: 99px;
+      background: var(--warn);
+      box-shadow: 0 0 0 3px rgba(251,191,36,.18);
+    }
+    .dot.ok{ background: var(--good); box-shadow: 0 0 0 3px rgba(45,212,191,.18); }
+    .dot.bad{ background: var(--bad); box-shadow: 0 0 0 3px rgba(251,113,133,.18); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 900px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding: 14px 14px 10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      border-bottom:1px solid var(--line);
+      background: rgba(0,0,0,.12);
+    }
+    .card .hd h2{
+      margin:0;
+      font-size: 14px;
+      letter-spacing: .2px;
+    }
+    .card .bd{
+      padding: 14px;
+    }
+
+    label{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      font-size:12px;
+      color: var(--muted);
+      min-width: 180px;
+      flex: 1 1 auto;
+    }
+
+    .row{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:flex-end;
+      margin-bottom: 12px;
+    }
+
+    input, select{
+      width:100%;
+      padding: 10px 11px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline: none;
+      font-size: 14px;
+    }
+    input::placeholder{ color: rgba(231,238,252,.45); }
+
+    .btn{
+      appearance:none;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .btn:hover{ background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.18); }
+    .btn:active{ transform: translateY(1px); }
+
+    .btn.primary{
+      border-color: rgba(79,140,255,.35);
+      background: linear-gradient(180deg, rgba(79,140,255,.28), rgba(79,140,255,.14));
+    }
+    .btn.primary:hover{ border-color: rgba(79,140,255,.55); }
+
+    .hint{
+      color: var(--muted);
+      font-size: 12px;
+      margin: 0;
+    }
+
+    .links{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .linkrow{
+      display:flex; gap:10px; align-items:center;
+      padding: 10px 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(0,0,0,.14);
+    }
+    .linkrow strong{
+      font-size:12px;
+      color: var(--muted);
+      min-width: 86px;
+    }
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      color: rgba(231,238,252,.88);
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1 1 auto;
+    }
+    .copy{
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    .status{
+      margin-top: 10px;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.14);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .progress{
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      overflow:hidden;
+      border: 1px solid var(--line);
+      display:none;
+    }
+    .bar{
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 999px;
+      transition: width .12s ease;
+    }
+    .progress.show{ display:block; }
+
+    .playlist{
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+
+    .item{
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.14);
+      border-radius: 14px;
+      padding: 12px;
+      display:flex;
+      gap: 10px;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+    .item .meta{
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .item .name{
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 1.25;
+    }
+    .item .url{
+      color: var(--muted);
+      font-size: 12px;
+      word-break: break-all;
+    }
+    .item .actions{
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      flex: 0 0 auto;
+    }
+    .iconbtn{
+      width: 38px;
+      height: 38px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      cursor:pointer;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .iconbtn:hover{ background: rgba(255,255,255,.09); }
+    .iconbtn.danger{
+      border-color: rgba(251,113,133,.28);
+      background: rgba(251,113,133,.10);
+    }
+    .iconbtn.danger:hover{ background: rgba(251,113,133,.16); }
+
+    .footer-actions{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .kbd{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      border-radius: 10px;
+      padding: 6px 8px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    /* cleaner file input */
+    input[type="file"]{
+      padding: 9px 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">
+        <h1>Signage Admin</h1>
+        <div class="subtitle">
+          Upload MP4 videos, manage playlists and generate player URLs for each location.
+        </div>
+      </div>
+      <div class="pill" title="API connection status">
+        <span id="healthDot" class="dot"></span>
+        <span id="healthText">API not checked</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- CONFIG + UPLOAD -->
+      <section class="card">
+        <div class="hd">
+          <h2>Configuration & Upload</h2>
+          <span class="kbd">Tip: always use HTTPS</span>
+        </div>
+        <div class="bd">
+
+          <div class="row">
+            <label>API base URL
+              <input id="apiBase" value="https://your-domain.example" />
+            </label>
+
+            <label>Admin token
+              <input id="token" placeholder="ADMIN_TOKEN (x-admin-token header)" />
+            </label>
+
+            <label>Location
+              <select id="screen">
+                <option value="milano">Milano</option>
+                <option value="cambiago">Cambiago</option>
+              </select>
+            </label>
+
+            <button class="btn" id="load" title="Load playlist for selected location">
+              Load playlist
+            </button>
+          </div>
+
+          <div class="row">
+            <label>Select MP4 file
+              <input type="file" id="file" accept="video/mp4" />
+            </label>
+
+            <label>Title (optional)
+              <input id="title" placeholder="e.g. Store Opening" />
+            </label>
+
+            <button class="btn primary" id="upload">Upload</button>
+          </div>
+
+          <div id="progress" class="progress">
+            <div id="bar" class="bar"></div>
+          </div>
+
+          <div class="status" id="status">Ready.</div>
+
+          <p class="hint" style="margin-top:12px;">Player URLs (click to copy):</p>
+          <div class="links">
+            <div class="linkrow">
+              <strong>Milano</strong>
+              <div class="mono" id="pMilano"></div>
+              <button class="btn copy" data-copy="pMilano">Copy</button>
+            </div>
+            <div class="linkrow">
+              <strong>Cambiago</strong>
+              <div class="mono" id="pCambiago"></div>
+              <button class="btn copy" data-copy="pCambiago">Copy</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- PLAYLIST -->
+      <section class="card">
+        <div class="hd">
+          <h2>Location playlist</h2>
+          <span class="kbd">Drag & drop coming next</span>
+        </div>
+        <div class="bd">
+          <div class="playlist" id="list"></div>
+
+          <div class="footer-actions">
+            <button class="btn primary" id="save">Save playlist</button>
+            <span class="hint">Tip: use ↑ ↓ to reorder videos.</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+const el = (id) => document.getElementById(id);
+
+function setStatus(msg, type="info"){
+  const s = el("status");
+  s.textContent = msg;
+  s.style.color =
+    (type==="bad") ? "var(--bad)" :
+    (type==="good") ? "var(--good)" :
+    "var(--muted)";
+}
+
+function playerUrl(screen) {
+  const api = el("apiBase").value.trim();
+  const base = location.href.replace(/admin\.html.*$/, "player.html");
+  return `${base}?screen=${encodeURIComponent(screen)}&api=${encodeURIComponent(api)}`;
+}
+
+function setPlayerLinks() {
+  el("pMilano").textContent = playerUrl("milano");
+  el("pCambiago").textContent = playerUrl("cambiago");
+}
+
+async function apiFetch(path, opts={}) {
+  const api = el("apiBase").value.trim();
+  const token = el("token").value.trim();
+  const headers = Object.assign({}, opts.headers || {}, { "x-admin-token": token });
+  const res = await fetch(`${api}${path}`, { ...opts, headers });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+let currentItems = [];
+
+function render() {
+  const list = el("list");
+  list.innerHTML = "";
+
+  if (!currentItems.length){
+    const empty = document.createElement("div");
+    empty.className = "status";
+    empty.textContent = "Playlist is empty. Upload a video and save.";
+    list.appendChild(empty);
+    return;
+  }
+
+  currentItems.forEach((it, i) => {
+    const item = document.createElement("div");
+    item.className = "item";
+
+    const left = document.createElement("div");
+    left.className = "meta";
+    left.innerHTML = `
+      <div class="name">${escapeHtml(it.title || "Video")}</div>
+      <div class="url">${escapeHtml(it.url || it.relUrl || "")}</div>
+    `;
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    actions.innerHTML = `
+      <button class="iconbtn" title="Move up" data-up="${i}">↑</button>
+      <button class="iconbtn" title="Move down" data-down="${i}">↓</button>
+      <button class="iconbtn danger" title="Remove" data-del="${i}">✕</button>
+    `;
+
+    item.appendChild(left);
+    item.appendChild(actions);
+    list.appendChild(item);
+  });
+
+  list.querySelectorAll("button[data-up]").forEach(btn => btn.onclick = () => {
+    const i = Number(btn.dataset.up);
+    if (i <= 0) return;
+    [currentItems[i-1], currentItems[i]] = [currentItems[i], currentItems[i-1]];
+    render();
+  });
+
+  list.querySelectorAll("button[data-down]").forEach(btn => btn.onclick = () => {
+    const i = Number(btn.dataset.down);
+    if (i >= currentItems.length - 1) return;
+    [currentItems[i+1], currentItems[i]] = [currentItems[i], currentItems[i+1]];
+    render();
+  });
+
+  list.querySelectorAll("button[data-del]").forEach(btn => btn.onclick = () => {
+    const i = Number(btn.dataset.del);
+    currentItems.splice(i, 1);
+    render();
+  });
+}
+
+function escapeHtml(s){
+  return String(s || "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+async function loadPlaylist() {
+  const screen = el("screen").value;
+  setStatus("Loading playlist…");
+  const data = await apiFetch("/api/admin/playlist");
+  currentItems = (data[screen] || []).map(x => ({
+    id: x.id,
+    title: x.title,
+    url: x.url,
+    relUrl: x.url
+  }));
+  render();
+  setStatus(`Playlist loaded (${currentItems.length} videos).`, "good");
+}
+
+async function savePlaylist() {
+  const screen = el("screen").value;
+  setStatus("Saving playlist…");
+  const body = {
+    items: currentItems.map((it, i) => ({
+      id: it.id || `${Date.now()}_${i}`,
+      title: it.title || "Video",
+      relUrl: it.relUrl || it.url
+    }))
+  };
+  await apiFetch(`/api/admin/playlist/${encodeURIComponent(screen)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  setStatus("Playlist saved ✅", "good");
+}
+
+function setProgress(pct){
+  const prog = el("progress");
+  const bar = el("bar");
+  prog.classList.add("show");
+  bar.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+}
+function hideProgress(){
+  el("progress").classList.remove("show");
+  el("bar").style.width = "0%";
+}
+
+// Upload with progress via XHR (fetch does not provide upload progress easily)
+function uploadWithProgress(apiBase, token, file){
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${apiBase}/api/upload`);
+    xhr.setRequestHeader("x-admin-token", token);
+
+    xhr.upload.onprogress = (e) => {
+      if (!e.lengthComputable) return;
+      const pct = (e.loaded / e.total) * 100;
+      setProgress(pct);
+    };
+
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.onload = () => {
+      if (xhr.status < 200 || xhr.status >= 300) {
+        return reject(new Error(`Upload failed (HTTP ${xhr.status})`));
+      }
+      try{
+        resolve(JSON.parse(xhr.responseText));
+      } catch(e){
+        reject(new Error("Invalid upload response"));
+      }
+    };
+
+    const form = new FormData();
+    form.append("file", file);
+    xhr.send(form);
+  });
+}
+
+async function upload() {
+  const f = el("file").files[0];
+  if (!f) return alert("Please select an MP4 file");
+  const api = el("apiBase").value.trim();
+  const token = el("token").value.trim();
+  if (!api) return alert("Please enter API base URL");
+  if (!token) return alert("Please enter admin token");
+
+  setStatus(`Uploading: ${f.name}…`);
+  setProgress(0);
+
+  const up = await uploadWithProgress(api, token, f);
+
+  const title = el("title").value.trim() || f.name.replace(/\.[^.]+$/, "");
+  currentItems.push({
+    id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    title,
+    url: up.file.relUrl,
+    relUrl: up.file.relUrl
+  });
+
+  render();
+  hideProgress();
+  el("title").value = "";
+  el("file").value = "";
+  setStatus("Upload completed ✅ (remember to save the playlist)", "good");
+}
+
+async function checkHealth(){
+  const dot = el("healthDot");
+  const txt = el("healthText");
+  try{
+    const api = el("apiBase").value.trim();
+    const res = await fetch(`${api}/api/playlist/milano`, { cache:"no-store" });
+    if (!res.ok) throw new Error();
+    dot.className = "dot ok";
+    txt.textContent = "API reachable";
+  } catch {
+    dot.className = "dot bad";
+    txt.textContent = "API not reachable";
+  }
+}
+
+function copyTextFrom(id){
+  const text = el(id).textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    setStatus("Copied to clipboard ✅", "good");
+  }).catch(() => {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+    setStatus("Copied to clipboard ✅", "good");
+  });
+}
+
+// Events
+el("load").onclick = async () => {
+  try { await loadPlaylist(); }
+  catch(e){ setStatus(e.message, "bad"); alert(e.message); }
+};
+el("save").onclick = async () => {
+  try { await savePlaylist(); }
+  catch(e){ setStatus(e.message, "bad"); alert(e.message); }
+};
+el("upload").onclick = async () => {
+  try { await upload(); }
+  catch(e){ hideProgress(); setStatus(e.message, "bad"); alert(e.message); }
+};
+
+document.querySelectorAll("[data-copy]").forEach(btn => {
+  btn.addEventListener("click", () => copyTextFrom(btn.getAttribute("data-copy")));
+});
+
+el("apiBase").addEventListener("input", () => {
+  setPlayerLinks();
+  checkHealth();
+});
+
+setPlayerLinks();
+checkHealth();
+</script>
+</body>
+</html>
